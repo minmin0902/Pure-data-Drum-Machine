@@ -1,0 +1,12 @@
+# Pure Data backup files
+*.pd~
+*.pd.bak
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp

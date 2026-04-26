@@ -1,44 +1,101 @@
 # Drum Pattern Sequencer in Pure Data
 
-## Abstract
-This project is designed to emulate classic drum patterns such as the Amen Break, UK Garage, and the iconic drum pattern from Led Zeppelin's "When The Levee Breaks". Utilizing various Pure Data (PD) techniques, including arrays, counters, and subtractive synthesis, the project explores digital sound generation and manipulation, with an emphasis on rhythmic precision and dynamic sound processing.
+> A 16-step drum sequencer built in Pure Data with subtractive-synthesized kick, snare, and hi-hat. Includes six classic preset patterns (Amen Break, Led Zeppelin "Levee", UK Garage, etc.), per-instrument velocity sequencing, and live delay/reverb effects.
 
-## Introduction
-The objective of this project was to design and implement a drum sequencer in Pure Data that can efficiently cycle through predefined drum patterns and allow for real-time sound manipulation. The sequencer supports various drum sounds such as kick, snare, and hi-hats and integrates effects like delay and reverb to enhance the audio output.
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Made with](https://img.shields.io/badge/made%20with-Pure%20Data-purple.svg)
+![Status](https://img.shields.io/badge/status-complete-green.svg)
 
-## Project Description
+## Author
 
-### System Overview
-The sequencer uses an array of 16 steps to store different drum sound combinations encoded as integers (0-6), where each number represents a unique combination of kick (k), snare (s), and hi-hat (h):
+**MinJoo Kim**
 
-- 0: Kick
-- 1: Snare
-- 2: Hi-hat
-- 3: Kick + Snare
-- 4: Kick + Hi-hat
-- 5: Snare + Hi-hat
-- 6: Kick + Snare + Hi-hat
+## Table of Contents
 
-### Sequencer Design
-The sequencer operates through a counter subpatch, which increments to cycle through array positions. A modulo operation ensures the counter wraps around at the end of the array. The sequencer's tempo is controlled by a BPM input, and a visual indicator (Hradio object) displays the current step.
+- [Overview](#overview)
+- [Project Structure](#project-structure)
+- [How to Run](#how-to-run)
+- [System Design](#system-design)
+- [Sound Synthesis](#sound-synthesis)
+- [Effects](#effects)
+- [Presets](#presets)
+- [License](#license)
 
-### Methodology
+## Overview
 
-#### Sound Generation
-Each drum sound is generated using subtractive synthesis:
+A drum machine that cycles through 16 sequencer steps and triggers synthesized drum hits in time. Each instrument (kick, snare, hi-hat) has its own velocity-per-step array, so accents and ghost notes are expressible. Six built-in presets reproduce classic break-beat patterns; live controls let you adjust BPM, effect levels, and instrument volumes during playback.
 
-- **Kick**: Created using an oscillator with a descending pitch, modulated by an amplitude envelope.
-- **Snare**: A combination of noise and a pitched oscillator, processed through filters.
-- **Hi-hat**: High-pass filtered noise with velocity randomization in the amplitude envelope.
+## Project Structure
 
-#### Effects Implementation
-- **Delay**: Implemented using `delwrite~` and `delread~` objects with adjustable feedback for echo effects.
-- **Reverb**: Utilized `rev2~` with controls for level, feedback, and dampening.
-- **Filters**: Adjustable cutoff frequency and Q for snare and hi-hat to modify tonal characteristics.
+```
+.
+├── DrumMachineGUI.pd   # Main patch — sequencer GUI, preset bank, FX
+├── MainTest2.pd        # Working iteration of the main patch
+├── MainTest.pd         # Earlier prototype (single combined-step array)
+├── counter.pd          # 16-step counter abstraction (BPM-driven)
+├── Kick.pd             # Kick synth (descending-pitch oscillator + envelope)
+├── snare.pd            # Snare synth (filtered noise + pitched osc)
+├── Hat.pd              # Hi-hat synth (high-pass filtered noise)
+├── LICENSE
+└── README.md
+```
 
-### Pattern Loading and Control
-Patterns are loaded into the sequencer using the array set command, with each preset corresponding to a different classic drum pattern. A graphical user interface allows users to select patterns and modify playback in real-time.
+## How to Run
 
-## Results
-The sequencer successfully emulates the selected drum patterns and allows for dynamic interaction during playback. The addition of effects and real-time control provides a versatile platform for both preset pattern playback and live performance adjustments. This project effectively demonstrates digital signal processing and rhythmic pattern generation, serving as a functional tool for both educational and creative musical applications.
+1. Install [Pure Data](https://puredata.info/) (vanilla, ≥ 0.51)
+2. Open `DrumMachineGUI.pd` in Pd
+3. Toggle DSP on
+4. Set BPM, choose a preset, and press the start toggle
 
+## System Design
+
+### Step Sequencing
+
+The sequencer uses **three separate 16-step arrays** — one each for kick, snare, and hi-hat:
+
+| Array | Purpose |
+|---|---|
+| `$0-stepskick` | Kick velocity per step (0 = off) |
+| `$0-stepssnare` | Snare velocity per step |
+| `$0-stepshat` | Hi-hat velocity per step |
+
+A counter abstraction (`counter.pd`) increments through positions 0–15 driven by a BPM-derived `metro` clock, with modulo wrap-around. The current step is shown live in an Hradio indicator.
+
+> Note: an earlier prototype (`MainTest.pd`) used a single combined `$0-steps` array with integer codes 0–6 representing kick/snare/hat combinations. The final implementation moved to per-instrument velocity arrays for finer expression.
+
+## Sound Synthesis
+
+All drum sounds are generated with **subtractive synthesis** — no samples used.
+
+| Drum | Method |
+|---|---|
+| **Kick** | Sine oscillator with descending pitch envelope (`osc~` + `vline~`), shaped by amplitude envelope |
+| **Snare** | White noise band-passed (`noise~` → `lop~ 3000` → `hip~ 1000`), mixed with a pitched oscillator |
+| **Hi-hat** | High-pass filtered noise (`noise~` → `hip~ 20000` → `hip~ 10000`) with velocity-randomized envelope |
+
+## Effects
+
+Built into `DrumMachineGUI.pd`:
+
+| Effect | Implementation | Controls |
+|---|---|---|
+| Delay | `delwrite~` / `delread~` with feedback | Time, feedback |
+| Reverb | `rev2~` | Level, feedback, damping |
+| Filters | Adjustable `lop~` / `hip~` on snare and hi-hat | Cutoff, Q |
+
+## Presets
+
+Six classic patterns are loaded by sending the preset name to the array-set system:
+
+| # | Preset | Reference |
+|---|---|---|
+| 1 | `amenbreak` | The Winstons — "Amen, Brother" |
+| 2 | `kickgroove` | Generic four-on-the-floor groove |
+| 3 | `house` | Classic house pattern |
+| 4 | `ukgarage` | UK Garage shuffle |
+| 5 | `rock` | Standard rock backbeat |
+| 6 | `ledzep` | Led Zeppelin — "When The Levee Breaks" |
+
+## License
+
+MIT — see [LICENSE](LICENSE) for details.
